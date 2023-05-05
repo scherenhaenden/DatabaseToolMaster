@@ -18,9 +18,9 @@ public class MysqlDumpManagerTests
     [Test]
     public async Task TestDump()
     {
-        var dbName = "library";
+        var dbName = "classicmodels";
         var dbUser = "root";
-        var dbPass = "mysql_test";
+        var dbPass = "blueberrywater4";
         var dbHost = "localhost";
         
         // Create process
