@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using DatabaseToolMaster.Core.Consoles;
 
-namespace DatabaseToolMaster.Tools.Routines;
+namespace DatabaseToolMaster.Tools.Consoles;
 
 public class ProcessCreator: IProcessCreator
 {
