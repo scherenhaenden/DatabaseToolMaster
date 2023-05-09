@@ -1,32 +1,19 @@
 using System.Diagnostics;
+using System.IO.Pipes;
 using System.Text;
 using DatabaseToolMaster.Core.Consoles;
 using DatabaseToolMaster.Core.MysqlDump;
+using DatabaseToolMaster.Tools.Consoles;
 
 namespace DatabaseToolMaster.Tools.MysqlDump;
 
 public class MysqlDumpManager : IMysqlDumpManager
 {
-    private readonly IProcessCreator _processCreator;
+    private readonly DetectMysql _detectMysql = new DetectMysql();
 
-    public MysqlDumpManager(IProcessCreator processCreator)
-    {
-        _processCreator = processCreator;
-    }
-    
     public bool IsInstalled()
     {
-        var process = _processCreator.CreateProcess("mysqldump", "--version");
-
-        process.Start();
-        process.WaitForExit();
-        var output = process.StandardOutput.ReadToEnd();
-        if(process.ExitCode != 0)
-        {
-            return false;
-        }
-
-        return true;
+        return _detectMysql.IsInstalled();
     }
 
     public void CreateDumpDirectDump(string databaseName, string outputFilePath)
@@ -35,18 +22,10 @@ public class MysqlDumpManager : IMysqlDumpManager
         string dbName = "mydatabase";
         string dbUser = "root";
         string dbPass = "mypassword";
-
-        var process = new Process
-        {
-            StartInfo = new ProcessStartInfo
-            {
-                FileName = "mysqldump",
-                Arguments = $"--user={dbUser} --password={dbPass} --databases {dbName} > {fileName}",
-                UseShellExecute = false,
-                CreateNoWindow = true
-            }
-        };
-
+        
+        var processCreator = new ProcessCreator();
+        var process = processCreator.CreateProcess("mysqldump", $"--user={dbUser} --password={dbPass} --databases {dbName} > {fileName}");
+     
         process.Start();
         process.WaitForExit();
 
@@ -62,7 +41,8 @@ public class MysqlDumpManager : IMysqlDumpManager
 
     public void CreateDumpDirectDump(string databaseName, string outputFilePath, string username, string password)
     {
-        var process = _processCreator.CreateProcess("mysqldump", $"--user={username} --password={password} --databases {databaseName} > {outputFilePath}");
+        var processCreator = new ProcessCreator();
+        var process = processCreator.CreateProcess("mysqldump", $"--user={username} --password={password} --databases {databaseName} > {outputFilePath}");
 
         process.Start();
         process.WaitForExit();
@@ -90,9 +70,9 @@ public class MysqlDumpManager : IMysqlDumpManager
         {
             consoleInput += " --no-create-db";
         }
+        var processCreator = new ProcessCreator();
         
-        
-        var process = _processCreator.CreateProcess("mysqldump", consoleInput);
+        var process = processCreator.CreateProcess("mysqldump", consoleInput);
         process.Start();
 
         var stream = new MemoryStream();
@@ -107,15 +87,25 @@ public class MysqlDumpManager : IMysqlDumpManager
         }
 
         return stream;
-
-
-
     }
     
     public string ReplacerForDataBaseCloning(string databaseNameOrigin, string databaseTarget, string backupData)
     {
-        backupData = backupData.Replace($"CREATE DATABASE `{databaseNameOrigin}`;", $"CREATE DATABASE `{databaseTarget}`;");
-        backupData = backupData.Replace($"USE `{databaseNameOrigin}`;", $"USE `{databaseTarget}`");
+        
+        // find out which line has "CREATE DATABASE" statement
+        var createDatabaseLine = backupData.Split("\n").FirstOrDefault(x => x.Contains("CREATE DATABASE"));
+        var lines = backupData.Split(new[] { Environment.NewLine }, StringSplitOptions.None);
+
+        var result = lines.ToList().FirstOrDefault(x => x.ToLower().Contains("CREATE DATABASE".ToLower()));
+
+        if (result != null)
+        {
+            // create if it doesn't exist
+            backupData = backupData.Replace(result, $"CREATE DATABASE IF NOT EXISTS `{databaseTarget}`;");
+            //backupData = backupData.Replace(result, $"CREATE DATABASE `{databaseTarget}`;");
+        }
+        //backupData = backupData.Replace($"CREATE DATABASE `{databaseNameOrigin}`;", $"CREATE DATABASE `{databaseTarget}`;");
+        backupData = backupData.Replace($"USE `{databaseNameOrigin}`;", $"USE `{databaseTarget}`;");
         return backupData;
     }
 
@@ -126,6 +116,27 @@ public class MysqlDumpManager : IMysqlDumpManager
         return LoadBackupToDatabase(server, databaseNameTarget, username, password, backupData);
     }
 
+    public void Test()
+    {
+        NamedPipeServerStream s = new NamedPipeServerStream("p", PipeDirection.In);
+        
+        Action<NamedPipeServerStream> a = callBack;
+        a.BeginInvoke(s, ar => { }, null);
+    }
+    
+    private void callBack(NamedPipeServerStream pipe)
+    {
+        while (true)
+        {
+            pipe.WaitForConnection();
+            StreamReader sr = new StreamReader(pipe);
+            Console.WriteLine(sr.ReadToEnd());
+            pipe.Disconnect();
+        }
+    }
+    
+    
+
 
     public async Task LoadBackupToDatabase(string server, string databaseName, string username, string password,
         string backupData)
@@ -135,6 +146,58 @@ public class MysqlDumpManager : IMysqlDumpManager
         var arguments = $"-h{server} -u{username} -p{password}";
 
         // Create a ProcessStartInfo object to configure the process.
+        var startInfo = ProcessStartInfo(arguments);
+        
+        // Check if the database exists.
+        
+        var checkDatabaseCommand = $"SELECT COUNT(*) FROM `information_schema`.`SCHEMATA` WHERE `SCHEMA_NAME` = '{databaseName}';";
+        var checkDatabaseResult = await ProcessRunnerMethod(arguments , checkDatabaseCommand);
+        var databaseExists = checkDatabaseResult.Contains("1") == true;
+        
+        /*if (!databaseExists)
+         {
+             try
+             { 
+                 // Create the database.
+                 var createDatabaseCommand = $"CREATE DATABASE `{databaseName}`;";
+                 var isDatabaseCreated = await ProcessRunnerMethod(arguments , createDatabaseCommand);
+
+              ;
+                 
+             }catch(Exception ex)
+             {
+                 Console.WriteLine(ex.Message);
+             }
+              
+         }*/
+        
+        /*started =process.Start();
+           // Use the database.
+           var useDatabaseCommand = $"USE `{databaseName}`;";
+           try
+           {
+               
+               var result = await ExecuteCommand(useDatabaseCommand, process);
+               Console.WriteLine(result);
+           }
+           catch (Exception ex)
+           {
+               Console.WriteLine(ex.Message);
+           }*/
+
+        try
+        {
+            var backupResults = await ProcessRunnerMethod(arguments, backupData);
+            Console.WriteLine(backupResults);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+        }
+    }
+
+    private static ProcessStartInfo ProcessStartInfo(string arguments)
+    {
         var startInfo = new ProcessStartInfo
         {
             FileName = "mysql",
@@ -144,63 +207,51 @@ public class MysqlDumpManager : IMysqlDumpManager
             RedirectStandardError = true, // Add this line to be able to read the error
             UseShellExecute = false
         };
+        return startInfo;
+    }
 
-        // Create a new Process object to execute the mysql command.
+    public async Task<string> ProcessRunnerMethod(string arguments, string Commands)
+    {
+        string result = "";
         using (var process = new Process())
         {
-            process.StartInfo = startInfo;
-
+            process.StartInfo = ProcessStartInfo(arguments);
             var started =process.Start();
-
-            // Check if the database exists.
-            var checkDatabaseCommand = $"SELECT COUNT(*) FROM `information_schema`.`SCHEMATA` WHERE `SCHEMA_NAME` = '{databaseName}';";
-            var checkDatabaseResult = await ExecuteCommand(checkDatabaseCommand, process);
-            var databaseExists = checkDatabaseResult.Trim() == "1";
-
-            if (!databaseExists)
-            {
-                try
-                {   started =process.Start();
-                    // Create the database.
-                    var createDatabaseCommand = $"CREATE DATABASE `{databaseName}`;";
-                    await ExecuteCommand(createDatabaseCommand, process);
-                    
-                }catch(Exception ex)
-                {
-                    Console.WriteLine(ex.Message);
-                }
-                 
-            }
-
+            //process.WaitForExit();
             started =process.Start();
-            // Use the database.
-            var useDatabaseCommand = $"USE `{databaseName}`;";
-            await ExecuteCommand(useDatabaseCommand, process);
-
-            started =process.Start();
-            // Load the backup data.
-            /*using (var writer = process.StandardInput)
-            {
-                writer.Write(backupData);
-            }*/
             
-            await ExecuteCommand(backupData, process);
+            
+            try
+            {
+                result = await ExecuteCommand(Commands, process);
+                Console.WriteLine(result);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
 
             process.WaitForExit();
 
             if (process.ExitCode != 0)
             {
-                throw new Exception("Failed to load backup data.");
+                //throw new Exception("Failed to load backup data.");
+                Console.WriteLine("Failed to load backup data.");
             }
         }
+
+        return result;
     }
     
     public async Task<string> ExecuteCommand(string command, Process process)
     {
-        using (var writer = new StreamWriter(process.StandardInput.BaseStream))
+        int bufferSize = Math.Max(command.Length, 4096)*2;
+        using (var writer = new StreamWriter(process.StandardInput.BaseStream,  Encoding.UTF8, bufferSize))
         {
+            
             await writer.WriteLineAsync(command);
-            await writer.FlushAsync();
+            writer.AutoFlush = true;
+            //await writer.FlushAsync();
         }
 
         var outputBuilder = new StringBuilder();
@@ -231,12 +282,13 @@ public class MysqlDumpManager : IMysqlDumpManager
 
         await Task.WhenAll(outputTask, errorTask);
 
-        process.WaitForExit();
+        
 
         if (process.ExitCode != 0)
         {
             throw new Exception($"Failed to execute command. Output: {outputBuilder}, Error: {errorBuilder}");
         }
+        
 
         return outputBuilder.ToString();
     }

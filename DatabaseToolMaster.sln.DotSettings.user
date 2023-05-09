@@ -1,12 +1,7 @@
 ﻿<wpf:ResourceDictionary xml:space="preserve" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:s="clr-namespace:System;assembly=mscorlib" xmlns:ss="urn:shemas-jetbrains-com:settings-storage-xaml" xmlns:wpf="http://schemas.microsoft.com/winfx/2006/xaml/presentation">
-	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=25a9193c_002D8e3f_002D47b6_002D9405_002De52f7d689c44/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" Name="Session" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;
-  &lt;And&gt;
-    &lt;ProjectFile&gt;228CE11A-7491-43C3-9416-80C16B4BEA75/d:Tools/d:MysqlDump/f:MysqlDumpManagerTests.cs&lt;/ProjectFile&gt;
-    &lt;TestAncestor&gt;
-      &lt;TestId&gt;NUnit3x::228CE11A-7491-43C3-9416-80C16B4BEA75::net7.0::DatabaseToolMaster.Tests.Tools.MysqlDump.MysqlDumpManagerTests&lt;/TestId&gt;
-    &lt;/TestAncestor&gt;
-  &lt;/And&gt;
+	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=25a9193c_002D8e3f_002D47b6_002D9405_002De52f7d689c44/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" IsActive="True" Name="Session" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;
+  &lt;Solution /&gt;
 &lt;/SessionState&gt;</s:String>
-	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=5bec4d6c_002D8b6b_002D445d_002D9629_002D298da1a6a404/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" IsActive="True" Name="All tests from MysqlDumpManagerTests.cs" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;
+	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=5bec4d6c_002D8b6b_002D445d_002D9629_002D298da1a6a404/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" Name="All tests from MysqlDumpManagerTests.cs" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;
   &lt;ProjectFile&gt;228CE11A-7491-43C3-9416-80C16B4BEA75/d:Tools/d:MysqlDump/f:MysqlDumpManagerTests.cs&lt;/ProjectFile&gt;
 &lt;/SessionState&gt;</s:String></wpf:ResourceDictionary>
