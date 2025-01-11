@@ -1,0 +1,52 @@
+name: NUnit Test Database
+
+on:
+  push:
+    branches: [ '*' ]
+  pull_request:
+    branches: [ '*' ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    name: CI Build
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          # The MySQL docker container requires these environment variables to be set
+          # so we can create and migrate the test database.
+          # See: https://hub.docker.com/_/mysql
+          MYSQL_DATABASE: library
+          MYSQL_ROOT_PASSWORD: mysql_test
+        ports:
+          # Opens port 3306 on service container and host
+          # https://docs.github.com/en/actions/using-containerized-services/about-service-containers
+          - 3306:3306
+          # Before continuing, verify the mysql container is reachable from the ubuntu host
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+      
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 7.0.x
+
+    # - name: Setup .NET
+    - name: Restore Dependencies
+      run: dotnet restore DatabaseToolMaster/DatabaseToolMaster.csproj
+
+    # - name: Setup .NET
+    - name: Restore Dependencies
+      run: dotnet restore DatabaseToolMaster.Tests/DatabaseToolMaster.Tests.csproj
+
+    - name: Build
+      run: dotnet build DatabaseToolMaster/DatabaseToolMaster.csproj --configuration Release --runtime linux-x64
+
+    - name: Build
+      run: dotnet build  DatabaseToolMaster.Tests/DatabaseToolMaster.Tests.csproj --configuration Release --runtime linux-x64
+
+    - name: Test
+      run: dotnet test --environment ASPNETCORE_ENVIRONMENT_DB_TEST=MySql

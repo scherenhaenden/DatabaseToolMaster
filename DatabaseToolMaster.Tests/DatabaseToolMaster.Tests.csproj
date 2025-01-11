@@ -7,7 +7,7 @@
 
         <IsPackable>false</IsPackable>
         <IsTestProject>true</IsTestProject>
-        <RootNamespace>MySQLToolMaster.Tests</RootNamespace>
+        <RootNamespace>DatabaseToolMaster.Tests</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
@@ -19,8 +19,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\DatabaseToolMaster\DatabaseToolMaster.csproj" />
-      <ProjectReference Include="..\UoWRepo\UoWRepo.csproj" />
+      <ProjectReference Include="..\DatabaseToolMaster\DatabaseToolMaster.csproj" />      
     </ItemGroup>
 
     <ItemGroup>
